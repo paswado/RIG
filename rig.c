@@ -5,78 +5,98 @@
 
 #include "rig.h"
 
-#define SIZE 10
-#define DELIM ','
+Flags* init(){
+    Flags *f = (Flags *)malloc(sizeof(Flags));
+    time_t s;
 
-int main(int argc, char *argv[]){
-	int *l;
-	long int size = SIZE;
-	char *p;		// For strtol
-	char delim = DELIM;
+    f->count = COUNT;
+    f->max = MAX;
+    f->negative = NEG;
+    f->delim = DELIM;
+
+   time(&s);
+    srand((unsigned int) s); 
+
+    return f;
+
+}
+
+int main(int argc, char **argv){
+	int *list;
+
+	Flags *f = init();
+
+	if(f == NULL)
+		exit(1);
+
+	set_flags(argc, argv, f);
+
+    list = gen_list(f);
+
+    print_list(list, f);
+	return 0;
+}
+
+int set_flags(int argc, char **argv, Flags *f){
+	static const char *opt_string = "c:d:m:nh?";
+	char *p; // for strtol
 	int opt;
-	static const char *optString = "c:d:h?";
 
-	opt = getopt(argc, argv, optString);
+	opt = getopt(argc, argv, opt_string);
+	f->negative = 0;
 
 	while(opt != -1){
 		switch( opt ){
 			case 'c':
-				size = strtol(optarg, &p, 0);
+				f->count = strtol(optarg, &p, 0);
 				break;
+			case 'm':
+				f->max = strtol(optarg, &p, 0);
 			case 'd':
-				delim = optarg[0];
+				f->delim = optarg[0];
+				break;
+			case 'n':
+				f->negative = 1;	
 				break;
 			case '?':
 			case 'h':
-				printf("-c for count, -d for delimiter");
 				break;
 		}
 
-		opt = getopt(argc, argv, optString);
+		opt = getopt(argc, argv, opt_string);
 	}
 
-	
-
-
-
-
-	srand(time(NULL));
-
-	l = gen_list(size);
-	print_list(l, size, delim);
-
-	return 1;
+	return 0;
 }
 
-int* gen_list(int len){
+int* gen_list(Flags* f){
+	int* l = (int *)malloc(sizeof(int) * (f->count));
 	int i;
-	int *list = (int *) malloc(sizeof(int) * len);
 
-	for(i = 0; i < len; i++)
-			list[i] = r_value(10);
-	
-	return list;
+	if(f->negative)
+		for( i = 0; i < f->count; i++){
+			l[i] = r_value_n(f->max);
+    }    
+	else
+		for(i = 0; i < f-> count; i++)
+			l[i] = r_value(f->max);
+
+	return l;
 }
 
+void print_list(int *list, Flags* f){
+    int i;
 
-// TODO: Negative Values between 0 & size
-
-int r_value(int size){
-	int n = rand();
-
-	if(n > size)
-			return n%(size + 1);
-
-	return n;
+    for(i = 0; i < f->count; i++){
+        printf("%d%c ", list[i], f->delim);
+    }
+    printf("\n");
 }
 
-void print_list(int *list, int len, char d){
-		int i;
+int r_value(int max){
+	return (rand())%(max + 1);
+}
 
-		for(i = 0; i < len; i++){
-			printf("%d", list[i]);
-			if(i < len - 1){
-				printf("%c ", d);
-			}
-	}
+int r_value_n(int max){
+		return (rand() - rand())%(max + 1);
 }
